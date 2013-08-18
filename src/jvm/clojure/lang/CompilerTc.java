@@ -321,7 +321,7 @@ public class CompilerTc implements Opcodes{
 
         Class getJavaClass() ;
 
-        String toStringTc();
+        Object toExprTc();
     }
 
     public static abstract class UntypedExpr implements Expr{
@@ -392,6 +392,10 @@ public class CompilerTc implements Opcodes{
             this.meta = meta;
             this.isDynamic = isDynamic;
             this.initProvided = initProvided;
+        }
+
+        public Object toExprTc() {
+            return new PersistentList(meta, var, new PersistentList(meta.toExprTc()), );
         }
 
         private boolean includesExplicitMetadata(MapExpr expr) {
@@ -473,10 +477,6 @@ public class CompilerTc implements Opcodes{
 
         public Class getJavaClass(){
             return Var.class;
-        }
-
-        public String toStringTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
         static class Parser implements IParser{
@@ -572,7 +572,7 @@ public class CompilerTc implements Opcodes{
             return val.getJavaClass();
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -620,8 +620,8 @@ public class CompilerTc implements Opcodes{
             return HostExpr.tagToClass(tag);
         }
 
-        public String toStringTc() {
-            return var.sym.toString();
+        public Object toExprTc() {
+            return var;
         }
 
         public Object evalAssign(Expr val) {
@@ -663,7 +663,7 @@ public class CompilerTc implements Opcodes{
             return Var.class;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return var.toString();
         }
 
@@ -708,7 +708,7 @@ public class CompilerTc implements Opcodes{
             return Keyword.class;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;
         }
     }
@@ -748,7 +748,7 @@ public class CompilerTc implements Opcodes{
             throw new IllegalArgumentException("ImportExpr has no Java class");
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -1179,7 +1179,7 @@ public class CompilerTc implements Opcodes{
             return tag != null ? HostExpr.tagToClass(tag) : field.getType();
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -1278,7 +1278,7 @@ public class CompilerTc implements Opcodes{
             return tag != null ? HostExpr.tagToClass(tag) : field.getType();
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -1572,7 +1572,7 @@ public class CompilerTc implements Opcodes{
             return tag != null ? HostExpr.tagToClass(tag) : method.getReturnType();
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
     }
@@ -1765,7 +1765,7 @@ public class CompilerTc implements Opcodes{
             return tag != null ? HostExpr.tagToClass(tag) : method.getReturnType();
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
     }
@@ -1786,7 +1786,7 @@ public class CompilerTc implements Opcodes{
                     "UnresolvedVarExpr has no Java class");
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -1836,8 +1836,8 @@ public class CompilerTc implements Opcodes{
                 throw new IllegalStateException("Unsupported Number type: " + n.getClass().getName());
         }
 
-        public String toStringTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        public Object toExprTc() {
+            return n;
         }
 
         public boolean canEmitPrimitive(){
@@ -1906,7 +1906,7 @@ public class CompilerTc implements Opcodes{
             //throw new IllegalArgumentException("Has no Java class");
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -1951,7 +1951,7 @@ public class CompilerTc implements Opcodes{
             return null;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
     }
@@ -1989,7 +1989,7 @@ public class CompilerTc implements Opcodes{
             return Boolean.class;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
     }
@@ -2021,7 +2021,7 @@ public class CompilerTc implements Opcodes{
             return String.class;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
     }
@@ -2044,7 +2044,7 @@ public class CompilerTc implements Opcodes{
             NIL_EXPR.emit(context, objx, gen);
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -2072,7 +2072,7 @@ public class CompilerTc implements Opcodes{
             NIL_EXPR.emit(context, objx, gen);
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -2200,7 +2200,7 @@ public class CompilerTc implements Opcodes{
             return tryExpr.getJavaClass();
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -2383,7 +2383,7 @@ public class CompilerTc implements Opcodes{
             gen.throwException();
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -2573,7 +2573,7 @@ public class CompilerTc implements Opcodes{
             return c;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -2633,7 +2633,7 @@ public class CompilerTc implements Opcodes{
             return expr.getJavaClass();
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
     }
@@ -2750,7 +2750,7 @@ public class CompilerTc implements Opcodes{
             return elseExpr.getJavaClass();
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -2881,7 +2881,7 @@ public class CompilerTc implements Opcodes{
                 throw new UnsupportedOperationException("Unknown Collection type");
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
     }
@@ -2917,7 +2917,7 @@ public class CompilerTc implements Opcodes{
             return IPersistentList.class;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -2975,7 +2975,7 @@ public class CompilerTc implements Opcodes{
             return IPersistentMap.class;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -3065,7 +3065,7 @@ public class CompilerTc implements Opcodes{
             return IPersistentSet.class;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -3133,7 +3133,7 @@ public class CompilerTc implements Opcodes{
             return IPersistentVector.class;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -3244,7 +3244,7 @@ public class CompilerTc implements Opcodes{
             return HostExpr.tagToClass(tag);
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -3343,7 +3343,7 @@ public class CompilerTc implements Opcodes{
             return Boolean.TYPE;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -3394,7 +3394,7 @@ public class CompilerTc implements Opcodes{
             return tag != null ? HostExpr.tagToClass(tag) : retClass;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -3701,7 +3701,7 @@ public class CompilerTc implements Opcodes{
             return HostExpr.tagToClass(tag);
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -3809,7 +3809,7 @@ public class CompilerTc implements Opcodes{
             return AFunction.class;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -4894,7 +4894,7 @@ public class CompilerTc implements Opcodes{
                     : IFn.class;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -5836,7 +5836,7 @@ public class CompilerTc implements Opcodes{
             return b.getJavaClass();
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -5917,7 +5917,7 @@ public class CompilerTc implements Opcodes{
             return lastExpr().getJavaClass();
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -6068,7 +6068,7 @@ public class CompilerTc implements Opcodes{
             return body.getJavaClass();
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
     }
@@ -6278,7 +6278,7 @@ public class CompilerTc implements Opcodes{
             return body.getJavaClass();
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -6396,7 +6396,7 @@ public class CompilerTc implements Opcodes{
             return RECUR_CLASS;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -6757,7 +6757,7 @@ public class CompilerTc implements Opcodes{
 
     public static Object eval(Object form, boolean freshLoader) {
         boolean createdLoader = false;
-        //(. clojure.lang.CompilerTc (eval 4))
+        //(. clojure.lang.CompilerTc (eval a))
         if(true)//!LOADER.isBound())
         {
             Var.pushThreadBindings(RT.map(LOADER, RT.makeClassLoader()));
@@ -6795,7 +6795,7 @@ public class CompilerTc implements Opcodes{
                 else
                 {
                     Expr expr = analyze(C.EVAL, form);
-                    return expr.toString();
+                    return expr.toExprTc();
                 }
             }
             catch(Throwable e)
@@ -8282,7 +8282,7 @@ public class CompilerTc implements Opcodes{
             return c;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
@@ -8362,7 +8362,7 @@ public class CompilerTc implements Opcodes{
             return returnType;
         }
 
-        public String toStringTc() {
+        public Object toExprTc() {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 

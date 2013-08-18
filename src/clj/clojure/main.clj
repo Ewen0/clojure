@@ -245,7 +245,7 @@ by default when a new command-line REPL is started."} repl-requires
               prompt      repl-prompt
               flush       flush
               read        repl-read
-              eval        eval
+              eval        eval-tc
               print       prn
               caught      repl-caught}}
         (apply hash-map options)

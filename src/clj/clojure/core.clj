@@ -2863,6 +2863,12 @@
    :static true}
   [form] (. clojure.lang.Compiler (eval form)))
 
+  (defn eval-tc
+    "Evaluates the form data structure (not text!) and returns the result."
+    {:added "1.0"
+     :static true}
+    [form] (. clojure.lang.CompilerTc (eval form)))
+
 (defmacro doseq
   "Repeatedly executes body (presumably for side-effects) with
   bindings and filtering as provided by \"for\".  Does not retain
