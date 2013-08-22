@@ -395,7 +395,7 @@ public class CompilerTc implements Opcodes{
         }
 
         public Object toExprTc() {
-            return new PersistentList(meta, var, new PersistentList(meta.toExprTc()), );
+            return new PersistentList(null, DEF, new PersistentList(null, var, new PersistentList(init.toExprTc()), 2), 2);
         }
 
         private boolean includesExplicitMetadata(MapExpr expr) {
@@ -3810,7 +3810,13 @@ public class CompilerTc implements Opcodes{
         }
 
         public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            FnMethod fnMethod = (FnMethod) RT.first(this.methods());
+            PersistentVector params = PersistentVector.EMPTY;
+            for (Object p : fnMethod.reqParms()) {
+                Symbol s = ((LocalBinding)p).sym;
+                params = params.cons(Symbol.intern(s.getNamespace(), s.getName().toUpperCase()));
+            }
+            return RT.seq(fnMethod.body().toExprTc()).cons(params).cons(FN);
         }
 
         protected void emitMethods(ClassVisitor cv){
@@ -4043,6 +4049,10 @@ public class CompilerTc implements Opcodes{
         final static Method voidctor = Method.getMethod("void <init>()");
         protected IPersistentMap classMeta;
         protected boolean isStatic;
+
+        public Object toExprTc(){
+            return null;
+        }
 
         public final String name(){
             return name;
@@ -4892,10 +4902,6 @@ public class CompilerTc implements Opcodes{
             return (compiledClass != null) ? compiledClass
                     : (tag != null) ? HostExpr.tagToClass(tag)
                     : IFn.class;
-        }
-
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
         public void emitAssignLocal(GeneratorAdapter gen, LocalBinding lb,Expr val){
@@ -5803,6 +5809,10 @@ public class CompilerTc implements Opcodes{
             throw new UnsupportedOperationException("Can't eval locals");
         }
 
+        public Object toExprTc() {
+            return Symbol.intern(b.sym.getNamespace(), b.sym.getName().toUpperCase());
+        }
+
         public boolean canEmitPrimitive(){
             return b.getPrimitiveType() != null;
         }
@@ -5835,11 +5845,6 @@ public class CompilerTc implements Opcodes{
                 return HostExpr.tagToClass(tag);
             return b.getJavaClass();
         }
-
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
 
     }
 
@@ -5885,6 +5890,16 @@ public class CompilerTc implements Opcodes{
             return ret;
         }
 
+        public Object toExprTc() {
+            PersistentVector ret = PersistentVector.EMPTY;
+            for (Object o : exprs)
+            {
+                Object e = ((Expr) o).toExprTc();
+                ret = ret.cons(e);
+            }
+            return ret;
+        }
+
         public boolean canEmitPrimitive(){
             return lastExpr() instanceof MaybePrimitiveExpr && ((MaybePrimitiveExpr)lastExpr()).canEmitPrimitive();
         }
@@ -5915,10 +5930,6 @@ public class CompilerTc implements Opcodes{
 
         public Class getJavaClass() {
             return lastExpr().getJavaClass();
-        }
-
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
         private Expr lastExpr(){
@@ -6082,6 +6093,10 @@ public class CompilerTc implements Opcodes{
             this.bindingInits = bindingInits;
             this.body = body;
             this.isLoop = isLoop;
+        }
+
+        public Object toExprTc() {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
         static class Parser implements IParser{
@@ -6276,10 +6291,6 @@ public class CompilerTc implements Opcodes{
 
         public Class getJavaClass() {
             return body.getJavaClass();
-        }
-
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
         public boolean canEmitPrimitive(){
@@ -6789,8 +6800,9 @@ public class CompilerTc implements Opcodes{
                 {
                     ObjExpr fexpr = (ObjExpr) analyze(C.EXPRESSION, RT.list(FN, PersistentVector.EMPTY, form),
                             "eval" + RT.nextID());
-                    IFn fn = (IFn) fexpr.eval();
-                    return fn.invoke();
+                    //IFn fn = (IFn) fexpr.eval();
+                    //return fn.invoke();
+                    return fexpr.toExprTc();
                 }
                 else
                 {
