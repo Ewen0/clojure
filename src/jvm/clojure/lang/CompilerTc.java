@@ -664,7 +664,7 @@ public class CompilerTc implements Opcodes{
         }
 
         public Object toExprTc() {
-            return var.toString();
+            return var;
         }
 
         static class Parser implements IParser{
@@ -1629,6 +1629,15 @@ public class CompilerTc implements Opcodes{
             }
         }
 
+        public Object toExprTc() {
+            PersistentVector argsExpr = PersistentVector.EMPTY;
+            for (int i = 0; i < args.length(); i++)
+            {
+                argsExpr = argsExpr.cons(((Expr)args.nth(i)).toExprTc());
+            }
+            return RT.seq(argsExpr).cons(Symbol.intern(c.getName() + "." + methodName));
+        }
+
         public Object eval() {
             try
             {
@@ -1763,10 +1772,6 @@ public class CompilerTc implements Opcodes{
 
         public Class getJavaClass() {
             return tag != null ? HostExpr.tagToClass(tag) : method.getReturnType();
-        }
-
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
     }
 
@@ -1907,7 +1912,7 @@ public class CompilerTc implements Opcodes{
         }
 
         public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return v;
         }
 
         static class Parser implements IParser{
@@ -1952,7 +1957,7 @@ public class CompilerTc implements Opcodes{
         }
 
         public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return eval();
         }
     }
 
@@ -3814,9 +3819,15 @@ public class CompilerTc implements Opcodes{
             PersistentVector params = PersistentVector.EMPTY;
             for (Object p : fnMethod.reqParms()) {
                 Symbol s = ((LocalBinding)p).sym;
-                params = params.cons(Symbol.intern(s.getNamespace(), s.getName().toUpperCase()));
+                params = params.cons(Symbol.intern(s.getNamespace(), s.getName()));
             }
             return RT.seq(fnMethod.body().toExprTc()).cons(params).cons(FN);
+        }
+
+        public Object toExprTcUnwrap() {
+            FnMethod fnMethod = (FnMethod) RT.first(this.methods());
+            PersistentVector body = (PersistentVector) fnMethod.body().toExprTc();
+            return RT.first(body);
         }
 
         protected void emitMethods(ClassVisitor cv){
@@ -5810,7 +5821,7 @@ public class CompilerTc implements Opcodes{
         }
 
         public Object toExprTc() {
-            return Symbol.intern(b.sym.getNamespace(), b.sym.getName().toUpperCase());
+            return Symbol.intern(b.sym.getNamespace(), b.sym.getName());
         }
 
         public boolean canEmitPrimitive(){
@@ -6096,7 +6107,13 @@ public class CompilerTc implements Opcodes{
         }
 
         public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            PersistentVector bindings = PersistentVector.EMPTY;
+            for (Object o : bindingInits) {
+                BindingInit bi = (BindingInit) o;
+                bindings = bindings.cons(bi.binding().sym)
+                        .cons(bi.init().toExprTc());
+            }
+            return RT.seq(body.toExprTc()).cons(bindings).cons(LET);
         }
 
         static class Parser implements IParser{
@@ -6484,11 +6501,11 @@ public class CompilerTc implements Opcodes{
 
     private static LocalBinding registerLocal(Symbol sym, Symbol tag, Expr init, boolean isArg) {
         int num = getAndIncLocalNum();
-        LocalBinding b = new LocalBinding(num, sym, tag, init, isArg, clearPathRoot());
+        LocalBinding b = new LocalBinding(num, genSym(), tag, init, isArg, clearPathRoot());
         IPersistentMap localsMap = (IPersistentMap) LOCAL_ENV.deref();
-        LOCAL_ENV.set(RT.assoc(localsMap, b.sym, b));
+        LOCAL_ENV.set(RT.assoc(localsMap, sym, b));
         ObjMethod method = (ObjMethod) METHOD.deref();
-        method.locals = (IPersistentMap) RT.assoc(method.locals, b, b);
+        method.locals = (IPersistentMap) RT.assoc(method.locals, sym, b);
         method.indexlocals = (IPersistentMap) RT.assoc(method.indexlocals, num, b);
         return b;
     }
@@ -6800,6 +6817,10 @@ public class CompilerTc implements Opcodes{
                 {
                     ObjExpr fexpr = (ObjExpr) analyze(C.EXPRESSION, RT.list(FN, PersistentVector.EMPTY, form),
                             "eval" + RT.nextID());
+                    if (fexpr.getClass().equals(FnExpr.class))
+                    {
+                        return ((FnExpr)fexpr).toExprTcUnwrap();
+                    }
                     //IFn fn = (IFn) fexpr.eval();
                     //return fn.invoke();
                     return fexpr.toExprTc();
@@ -8631,4 +8652,7 @@ public class CompilerTc implements Opcodes{
 
     static IPersistentCollection emptyVarCallSites(){return PersistentHashSet.EMPTY;}
 
+    static Symbol genSym() {
+        return Symbol.intern("G__" + RT.nextID());
+    }
 }

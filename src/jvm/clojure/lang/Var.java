@@ -141,7 +141,7 @@ public final class Var extends ARef implements IFn, IRef, Settable{
 
     public String toString(){
         if(ns != null)
-            return "#'" + ns.name + "/" + sym;
+            return ns.name + "/" + sym;
         return "#<Var: " + (sym != null ? sym.toString() : "--unnamed--") + ">";
     }
 
