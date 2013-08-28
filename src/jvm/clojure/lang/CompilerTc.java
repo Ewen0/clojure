@@ -94,6 +94,8 @@ public class CompilerTc implements Opcodes{
     static final Symbol NS = Symbol.intern("ns");
     static final Symbol IN_NS = Symbol.intern("in-ns");
 
+    static final Symbol VALUE = Symbol.intern("value");
+
 //static final Symbol IMPORT = Symbol.intern("import");
 //static final Symbol USE = Symbol.intern("use");
 
@@ -621,7 +623,7 @@ public class CompilerTc implements Opcodes{
         }
 
         public Object toExprTc() {
-            return var;
+            return PersistentList.EMPTY.cons(var).cons(VALUE);
         }
 
         public Object evalAssign(Expr val) {
@@ -3530,6 +3532,15 @@ public class CompilerTc implements Opcodes{
         static Keyword onKey = Keyword.intern("on");
         static Keyword methodMapKey = Keyword.intern("method-map");
 
+        public Object toExprTc() {
+            PersistentVector argsExpr = PersistentVector.EMPTY;
+            for (int i = 0; i < args.length(); i++)
+            {
+                argsExpr = argsExpr.cons(((Expr) args.nth(i)).toExprTc());
+            }
+            return RT.seq(argsExpr).cons(fexpr.toExprTc());
+        }
+
         public InvokeExpr(String source, int line, int column, Symbol tag, Expr fexpr, IPersistentVector args) {
             this.source = source;
             this.fexpr = fexpr;
@@ -3704,10 +3715,6 @@ public class CompilerTc implements Opcodes{
 
         public Class getJavaClass() {
             return HostExpr.tagToClass(tag);
-        }
-
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
         static public Expr parse(C context, ISeq form) {
