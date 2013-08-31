@@ -1281,7 +1281,7 @@ public class CompilerTc implements Opcodes{
         }
 
         public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return Symbol.intern(c.getName(), fieldName);
         }
 
         public Object evalAssign(Expr val) {
@@ -1476,6 +1476,16 @@ public class CompilerTc implements Opcodes{
             }
         }
 
+        public Object toExprTc() {
+            PersistentVector argsExpr = PersistentVector.EMPTY;
+            for (int i = 0; i < args.length(); i++)
+            {
+                argsExpr = argsExpr.cons(((Expr) args.nth(i)).toExprTc());
+            }
+            return argsExpr.length() == 0? PersistentList.EMPTY.cons(Symbol.intern(methodName)).cons(target.toExprTc()).cons(DOT) :
+                    RT.seq(argsExpr).cons(Symbol.intern(methodName)).cons(target.toExprTc()).cons(DOT);
+        }
+
         public Object eval() {
             try
             {
@@ -1573,10 +1583,6 @@ public class CompilerTc implements Opcodes{
         public Class getJavaClass() {
             return tag != null ? HostExpr.tagToClass(tag) : method.getReturnType();
         }
-
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
     }
 
 
@@ -1632,12 +1638,13 @@ public class CompilerTc implements Opcodes{
         }
 
         public Object toExprTc() {
-            PersistentVector argsExpr = PersistentVector.EMPTY;
+            IPersistentCollection fullExpr = PersistentList.EMPTY;
             for (int i = 0; i < args.length(); i++)
             {
-                argsExpr = argsExpr.cons(((Expr)args.nth(i)).toExprTc());
+                Expr argExpr = (Expr) args.nth(i);
+                fullExpr = fullExpr.cons(argExpr.toExprTc());
             }
-            return RT.seq(argsExpr).cons(Symbol.intern(c.getName() + "." + methodName));
+            return fullExpr.cons(Symbol.intern(method.getName())).cons(Symbol.intern(c.getName())).cons(DOT);
         }
 
         public Object eval() {
@@ -1973,6 +1980,10 @@ public class CompilerTc implements Opcodes{
             this.val = val;
         }
 
+        public Object toExprTc() {
+            return val ? RT.T : RT.F;
+        }
+
         Object val(){
             return val ? RT.T : RT.F;
         }
@@ -1995,10 +2006,6 @@ public class CompilerTc implements Opcodes{
         public Class getJavaClass() {
             return Boolean.class;
         }
-
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
     }
 
     final static BooleanExpr TRUE_EXPR = new BooleanExpr(true);
@@ -2009,6 +2016,10 @@ public class CompilerTc implements Opcodes{
 
         public StringExpr(String str){
             this.str = str;
+        }
+
+        public Object toExprTc() {
+            return str;
         }
 
         Object val(){
@@ -2026,10 +2037,6 @@ public class CompilerTc implements Opcodes{
 
         public Class getJavaClass() {
             return String.class;
-        }
-
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
     }
 
@@ -2112,6 +2119,21 @@ public class CompilerTc implements Opcodes{
                 this.lb = lb;
                 this.handler = handler;
             }
+
+            public Object toExprTc()
+            {
+                IPersistentCollection fullExpr = PersistentList.EMPTY;
+                Object tmpExpr = handler.toExprTc();
+                if (tmpExpr.getClass().equals(PersistentVector.class))
+                {
+                    for (int i = ((PersistentVector)tmpExpr).length()-1; i >= 0; i--)
+                    {
+                        fullExpr = fullExpr.cons(((PersistentVector) tmpExpr).nth(i));
+                    }
+                }
+                fullExpr = fullExpr.cons(lb.sym);
+                return fullExpr.cons(Symbol.intern(c.getName()));
+            }
         }
 
         public TryExpr(Expr tryExpr, PersistentVector catchExprs, Expr finallyExpr, int retLocal, int finallyLocal){
@@ -2120,6 +2142,42 @@ public class CompilerTc implements Opcodes{
             this.finallyExpr = finallyExpr;
             this.retLocal = retLocal;
             this.finallyLocal = finallyLocal;
+        }
+
+        public Object toExprTc() {
+            IPersistentCollection fullExpr = PersistentList.EMPTY;
+
+            //Handle finallyExpr
+            if (finallyExpr != null)
+            {
+                Object tmpExpr = finallyExpr.toExprTc();
+                if (tmpExpr.getClass().equals(PersistentVector.class))  //Since finallyExpr is probably (always?) a bodyExpr, the result of calling toExprTc() may be a persistentVector
+                {
+                    for (int i = ((PersistentVector) tmpExpr).length()-1; i>=0; i--)
+                    {
+                        fullExpr = fullExpr.cons(((PersistentVector) tmpExpr).nth(i));
+                    }
+                }
+                fullExpr = fullExpr.cons(FINALLY);
+                fullExpr = PersistentList.EMPTY.cons(fullExpr);
+            }
+
+            //Handle catchExpr(s)
+            for (int i = catchExprs.length()-1; i >= 0; i--)
+            {
+                fullExpr = fullExpr.cons(((CatchClause)catchExprs.get(i)).toExprTc());
+            }
+
+            //Handle tryExpr
+            Object tmpExpr = tryExpr.toExprTc();
+            if (tmpExpr.getClass().equals(PersistentVector.class))  //Since tryExpr is probably (always?) a bodyExpr, the result of calling toExprTc() may be a persistentVector
+            {
+                for (int i = ((PersistentVector) tmpExpr).length()-1; i >= 0; i--)
+                {
+                    fullExpr = fullExpr.cons(((PersistentVector) tmpExpr).nth(i));
+                }
+            }
+            return fullExpr.cons(TRY);
         }
 
         public Object eval() {
@@ -2205,10 +2263,6 @@ public class CompilerTc implements Opcodes{
 
         public Class getJavaClass() {
             return tryExpr.getJavaClass();
-        }
-
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
         static class Parser implements IParser{
@@ -2616,6 +2670,10 @@ public class CompilerTc implements Opcodes{
             this.meta = meta;
         }
 
+        public Object toExprTc() {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
         public Object eval() {
             return ((IObj) expr.eval()).withMeta((IPersistentMap) meta.eval());
         }
@@ -2639,10 +2697,6 @@ public class CompilerTc implements Opcodes{
         public Class getJavaClass() {
             return expr.getJavaClass();
         }
-
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
     }
 
     public static class IfExpr implements Expr, MaybePrimitiveExpr{
@@ -2659,6 +2713,10 @@ public class CompilerTc implements Opcodes{
             this.elseExpr = elseExpr;
             this.line = line;
             this.column = column;
+        }
+
+        public Object toExprTc() {
+            return PersistentList.EMPTY.cons(elseExpr.toExprTc()).cons(thenExpr.toExprTc()).cons(testExpr.toExprTc()).cons(IF);
         }
 
         public Object eval() {
@@ -2757,10 +2815,6 @@ public class CompilerTc implements Opcodes{
             return elseExpr.getJavaClass();
         }
 
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
         static class Parser implements IParser{
             public Expr parse(C context, Object frm) {
                 ISeq form = (ISeq) frm;
@@ -2850,6 +2904,10 @@ public class CompilerTc implements Opcodes{
             this.coll = coll;
         }
 
+        public Object toExprTc() {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
         public Object eval() {
             return coll;
         }
@@ -2887,10 +2945,6 @@ public class CompilerTc implements Opcodes{
             else
                 throw new UnsupportedOperationException("Unknown Collection type");
         }
-
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
     }
 
     public static class ListExpr implements Expr{
@@ -2900,6 +2954,10 @@ public class CompilerTc implements Opcodes{
 
         public ListExpr(IPersistentVector args){
             this.args = args;
+        }
+
+        public Object toExprTc() {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
         public Object eval() {
@@ -2924,10 +2982,6 @@ public class CompilerTc implements Opcodes{
             return IPersistentList.class;
         }
 
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
     }
 
     public static class MapExpr implements Expr{
@@ -2944,6 +2998,13 @@ public class CompilerTc implements Opcodes{
             Object[] ret = new Object[keyvals.count()];
             for(int i = 0; i < keyvals.count(); i++)
                 ret[i] = ((Expr) keyvals.nth(i)).eval();
+            return RT.map(ret);
+        }
+
+        public Object toExprTc() {
+            Object[] ret = new Object[keyvals.count()];
+            for(int i = 0; i < keyvals.count(); i++)
+                ret[i] = ((Expr) keyvals.nth(i)).toExprTc();
             return RT.map(ret);
         }
 
@@ -2980,10 +3041,6 @@ public class CompilerTc implements Opcodes{
 
         public Class getJavaClass() {
             return IPersistentMap.class;
-        }
-
-        public Object toExprTc() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
 
@@ -3533,12 +3590,12 @@ public class CompilerTc implements Opcodes{
         static Keyword methodMapKey = Keyword.intern("method-map");
 
         public Object toExprTc() {
-            PersistentVector argsExpr = PersistentVector.EMPTY;
-            for (int i = 0; i < args.length(); i++)
+            IPersistentCollection fullExpr = PersistentList.EMPTY;
+            for (int i = args.length()-1; i >= 0; i--)
             {
-                argsExpr = argsExpr.cons(((Expr) args.nth(i)).toExprTc());
+                fullExpr = fullExpr.cons(((Expr) args.nth(i)).toExprTc());
             }
-            return RT.seq(argsExpr).cons(fexpr.toExprTc());
+            return RT.seq(fullExpr.cons(fexpr.toExprTc()));
         }
 
         public InvokeExpr(String source, int line, int column, Symbol tag, Expr fexpr, IPersistentVector args) {
@@ -3828,7 +3885,13 @@ public class CompilerTc implements Opcodes{
                 Symbol s = ((LocalBinding)p).sym;
                 params = params.cons(Symbol.intern(s.getNamespace(), s.getName()));
             }
-            return RT.seq(fnMethod.body().toExprTc()).cons(params).cons(FN);
+            ISeq fullExpr = RT.seq(fnMethod.body().toExprTc()).cons(params);
+            if (this.thisName() != null)
+            {
+                LocalBinding lb = (LocalBinding) fnMethod.locals().valAt(Symbol.intern(this.thisName));
+                fullExpr = fullExpr.cons(Symbol.intern(lb.sym.getNamespace(), lb.sym.getName()));
+            }
+            return fullExpr.cons(FN);
         }
 
         public Object toExprTcUnwrap() {
@@ -5894,6 +5957,10 @@ public class CompilerTc implements Opcodes{
                 }
                 if(exprs.count() == 0)
                     exprs = exprs.cons(NIL_EXPR);
+                else if(RT.first(frms).equals(DO))
+                {
+                    exprs = PersistentVector.create(RT.seq(exprs).cons(new ConstantExpr(DO)));
+                }
                 return new BodyExpr(exprs);
             }
         }
@@ -5914,6 +5981,10 @@ public class CompilerTc implements Opcodes{
             {
                 Object e = ((Expr) o).toExprTc();
                 ret = ret.cons(e);
+            }
+            if (RT.first(ret).equals(DO))
+            {
+                return RT.seq(ret);
             }
             return ret;
         }
@@ -6566,7 +6637,9 @@ public class CompilerTc implements Opcodes{
                 return ret;
             }
             else if(form instanceof ISeq)
+            {
                 return analyzeSeq(context, (ISeq) form, name);
+            }
             else if(form instanceof IPersistentVector)
                 return VectorExpr.parse(context, (IPersistentVector) form);
             else if(form instanceof IRecord)
@@ -6812,10 +6885,18 @@ public class CompilerTc implements Opcodes{
                 form = macroexpand(form);
                 if(form instanceof IPersistentCollection && Util.equals(RT.first(form), DO))
                 {
-                    ISeq s = RT.next(form);
+                    /*ISeq s = RT.next(form);
                     for(; RT.next(s) != null; s = RT.next(s))
                         eval(RT.first(s), false);
-                    return eval(RT.first(s), false);
+                    return eval(RT.first(s), false);*/
+                    IPersistentCollection doExpr = PersistentList.EMPTY;
+                    ISeq s = RT.next(form);
+                    PersistentVector restVec = PersistentVector.create(s);
+                    for (int i = restVec.count()-1; i >= 0; i--)
+                    {
+                        doExpr = doExpr.cons(eval(restVec.nth(i)));
+                    }
+                    return doExpr.cons(DO);
                 }
                 else if((form instanceof IType) ||
                         (form instanceof IPersistentCollection
